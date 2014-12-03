@@ -88,12 +88,10 @@ func HashConcurrentlyHandler(c *gin.Context) {
 	runtime.GOMAXPROCS(8)
 	// left over hashes, not cleanly divisible
 	left_over := int(number_hashes_requested) % 8
-	fmt.Println("left over", left_over)
 	go processHashes(left_over)
 	number_hashes_requested -= int64(left_over)
 	// spin up number of cpus goroutines
 	for i := 0; i < 8; i++ {
-		fmt.Println("count", number_hashes_requested/8)
 		go processHashes(int(number_hashes_requested) / 8)
 	}
 	// append the finished hashes as they come in the channel
