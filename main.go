@@ -4,6 +4,7 @@ package main
 // import libraries needed
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"strconv"
 
@@ -17,16 +18,32 @@ import (
 func main() {
 	// Create the gin
 	api := gin.Default()
+	// add an example middleware
+	api.Use(LogStartEndMiddleware())
 	// URL Routing
 	// version 1 of the API, grouping
 	v1 := api.Group("/v1")
 	{
-		// health check endpoint
+		// sequential hash handler endpoint
 		v1.GET("/hash/:number_hashes/times", HashHandler)
+		// concurrent hash handler endpoint
 		v1.GET("/hash/:number_hashes/times/concurrently", HashConcurrentlyHandler)
 	}
-
+	// start go's webserver
 	api.Run(":8080")
+}
+
+// LogStartEndMiddleware - Example Gin Middleware
+func LogStartEndMiddleware() gin.HandlerFunc {
+	// need to return a gin handler func type, which is of type func(*gin.Context)
+	return func(c *gin.Context) {
+		// to prove this happens before the handler
+		log.Println("before handler call")
+		// call the handler
+		c.Next()
+		// to prove this happens after handler
+		log.Println("after handler call")
+	}
 }
 
 // hashResponse - api response structure
@@ -51,6 +68,7 @@ var randomHash = func() string {
 
 // HashHandler - a gin handler for creating sequential hashes
 func HashHandler(c *gin.Context) {
+	log.Println("starting hashhandler")
 	// get the variable from the url
 	number_hashes_requested, err := strconv.ParseInt(c.Params.ByName("number_hashes"), 10, 64)
 	if err != nil {
@@ -65,10 +83,12 @@ func HashHandler(c *gin.Context) {
 	}
 	// send response
 	c.JSON(200, response)
+	log.Println("ending hashhandler")
 }
 
 // HashConcurrentlyHandler - a gin handler for creating concurrent hashes
 func HashConcurrentlyHandler(c *gin.Context) {
+	log.Println("starting hashconcurrentlyhandler")
 	// get the variable from the url
 	number_hashes_requested, err := strconv.ParseInt(c.Params.ByName("number_hashes"), 10, 64)
 	if err != nil {
@@ -100,4 +120,5 @@ func HashConcurrentlyHandler(c *gin.Context) {
 	}
 	// send response
 	c.JSON(200, response)
+	log.Println("ending hashconcurrentlyhandler")
 }
